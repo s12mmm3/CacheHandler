@@ -9,18 +9,26 @@ CacheHandler是一个C++模板类，用于实现缓存管理的功能。它可�
 #include "CacheHandler.h"
 
 // Define a function that takes two integers and returns their sum
-int add(int a, int b) {
+double add(int a, int b) {
     return a + b;
 }
 
 int main() {
     // Create a CacheHandler object with add function, 10 seconds timeout and 5 items max size
-    CacheHandler<int, int, int> cache(add, 10000, 5);
+    CacheHandler<double, int, int> cache(add, 10000, 5);
+
+    // You can use lambda too
+    CacheHandler<double, int, int> cache1([](int a, int b) -> double {
+        return a + b;
+    }, 10000, 5);
 
     // Get the value of add(1, 2) and cache it
     int result = cache.value(1, 2);
+    std::cout << result << std::endl;
 
-    std::cout << result << std::endl;>>
+    result = cache.value(1, 2);
+    std::cout << result << std::endl;
+
     return 0;
 }
 ```
