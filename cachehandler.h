@@ -18,7 +18,6 @@ public: \
     type m_##valueName = defaultValue; \
     public: \
 
-// Define a cache handling template class; Return value type: R, parameter type: A
 template<typename R, typename ...A>
 class CacheHandler
 {
@@ -36,7 +35,10 @@ public:
     R value(A... args)
     {
         R result;
-        if (m_cache.find(KeyType(args...)) != m_cache.end())
+        if (!enabled()) {
+            result = m_func(args...);
+        }
+        else if (m_cache.find(KeyType(args...)) != m_cache.end())
         {
             ValueType data = m_cache.at(KeyType(args...));
             long long elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -53,6 +55,14 @@ public:
         else
         {
             std::cout << "Cache Not Hit" << std::endl;
+            if (m_cache.size() == maxSize()) {
+                // First remove timeout item
+                removeTimeout(false);
+                if (m_cache.size() == maxSize()) {
+                    // Second remove the latest item
+                    m_cache.erase(m_cache.begin());
+                }
+            }
             result = insert(args...);
         }
         return result;
@@ -70,15 +80,19 @@ public:
         return m_cache.clear();
     }
 
-    void limitSize(bool isAll = true) {
-        for (auto i = m_cache.cbegin(); i != m_cache.cend(); i++) {
+    void erase(A... args) {
+        m_cache.erase(KeyType(args...));
+    }
+
+    void removeTimeout(bool isAll = true) {
+        for (auto i = m_cache.begin(); i != m_cache.end(); i++) {
             auto data = i->second;
             long long elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(
                                         std::chrono::system_clock::now().time_since_epoch()).count() - std::get<0>(data);
             if (elapsedTime - timeout() <= 0) {
                 m_cache.erase(i);
                 if (!isAll) {
-                    return;
+                    break;
                 }
             }
         }
@@ -100,6 +114,7 @@ private:
 
     DEFINE_VALUE(long long, timeout, -1)
     DEFINE_VALUE(int, maxSize, -1)
+    DEFINE_VALUE(bool, enabled, true)
 };
 
 #endif // CACHEHANDLER_H
