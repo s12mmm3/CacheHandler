@@ -1,6 +1,7 @@
 #ifndef CACHEHANDLER_H
 #define CACHEHANDLER_H
 
+#include <functional>
 #include <iostream>
 #include <chrono>
 #include <map>
@@ -24,7 +25,7 @@ class CacheHandler
     using KeyType = std::tuple<A...>;
     using ValueType = std::tuple<long long, R>;
 public:
-    CacheHandler(R (*func)(A...),
+    CacheHandler(std::function<R(A...)> func,
                   int timeout = -1,
                   int maxSize = -1)
         : m_func(func), m_timeout(timeout), m_maxSize(maxSize)
@@ -109,7 +110,7 @@ private:
         return newData;
     }
 
-    R (*m_func)(A...);
+    std::function<R(A...)> m_func;
     std::map<KeyType, ValueType> m_cache;
 
     DEFINE_VALUE(long long, timeout, -1)
